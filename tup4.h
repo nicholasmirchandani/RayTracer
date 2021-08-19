@@ -3,6 +3,7 @@
 #define EPSILON 0.00001f
 #include <iostream>
 #include <cmath>
+#define _USE_MATH_DEFINES
 
 class tup4 {
     public:
@@ -14,6 +15,7 @@ class tup4 {
 
     tup4();
     tup4(float, float, float, float);
+    tup4(const tup4&);
     bool isPoint();
     friend std::ostream& operator<<(std::ostream& os, const tup4& dt);
     friend tup4 operator+(tup4 a1, tup4 a2);

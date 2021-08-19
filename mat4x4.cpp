@@ -116,3 +116,63 @@ mat4x4 inverse(mat4x4 a) {
     }
     return result;
 }
+
+mat4x4 translation(float x, float y, float z) {
+    mat4x4 result;
+    MAT4X4_INIT(result,
+                1, 0, 0, x,
+                0, 1, 0, y,
+                0, 0, 1, z,
+                0, 0, 0, 1);
+    return result;
+}
+
+mat4x4 scaling(float x, float y, float z) {
+    mat4x4 result;
+    MAT4X4_INIT(result,
+                x, 0, 0, 0,
+                0, y, 0, 0,
+                0, 0, z, 0,
+                0, 0, 0, 1);
+    return result;
+}
+
+mat4x4 rotation_x(float r) {
+    mat4x4 result;
+    MAT4X4_INIT(result,
+                1, 0,       0,      0,
+                0, cos(r), -sin(r), 0,
+                0, sin(r), -cos(r), 0,
+                0, 0,       0,      1);
+    return result;
+}
+
+mat4x4 rotation_y(float r) {
+    mat4x4 result;
+    MAT4X4_INIT(result,
+                cos(r),  0, sin(r), 0,
+                0,       1, 0,      0,
+                -sin(r), 0, cos(r), 0,
+                0,       0, 0,      1);
+    return result;
+}
+
+mat4x4 rotation_z(float r) {
+    mat4x4 result;
+    MAT4X4_INIT(result,
+                cos(r), -sin(r), 0, 0,
+                sin(r),  cos(r), 0, 0,
+                0,       0,      1, 0,
+                0,       0,      0, 1);
+    return result;
+}
+
+mat4x4 shearing(float xy, float xz, float yx, float yz, float zx, float zy) {
+    mat4x4 result;
+    MAT4X4_INIT(result,
+                1,  xy, xz, 0,
+                yx, 1,  yz, 0,
+                zx, zy, 1,  0,
+                0,  0,  0,  1);
+    return result;
+}

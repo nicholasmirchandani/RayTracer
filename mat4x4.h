@@ -31,5 +31,11 @@ float mat_minor(mat4x4, int, int); // Strange name due to name conflict with bui
 float cofactor(mat4x4, int, int);
 float determinant(mat4x4);
 mat4x4 inverse(mat4x4);
+mat4x4 translation(float, float, float);
+mat4x4 scaling(float, float, float);
+mat4x4 rotation_x(float);
+mat4x4 rotation_y(float);
+mat4x4 rotation_z(float);
+mat4x4 shearing(float, float, float, float, float, float);
 
 #endif

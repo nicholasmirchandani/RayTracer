@@ -11,6 +11,13 @@ tup4::tup4(float x, float y, float z, float w) {
     this->w = w;
 }
 
+tup4::tup4(const tup4& t) {
+    x = t.x;
+    y = t.y;
+    z = t.z;
+    w = t.w;
+}
+
 bool tup4::isPoint() {
     return w == 1.0f;
 }

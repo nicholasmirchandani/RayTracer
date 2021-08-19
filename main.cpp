@@ -465,6 +465,95 @@ int main() {
             }
         }
     }
+
+    { // Chapter 4: Matrix Transformations
+        { // Test 1: Translation
+            mat4x4 transform = translation(5, -3, 2);
+            point p(-3, 4, 5);
+            assert(transform * p == point(2,1,7));    
+
+            mat4x4 inv = inverse(transform);
+            assert(inv * p == point (-8, 7, 3));
+
+            vector v(-3, 4, 5);
+            assert(transform * v == v);
+        }
+
+        { // Test 2: Scaling
+            mat4x4 transform = scaling(2, 3, 4);
+            point p(-4, 6, 8);
+            assert(transform * p == point(-8, 18, 32));
+
+            vector v(-4, 6, 8);
+            assert(transform * v == vector(-8, 18, 32));
+
+            mat4x4 inv = inverse(transform);
+            assert(inv * v == vector(-2, 2, 2));
+
+            transform = scaling(-1, 1, 1);
+            p = point(2, 3, 4);
+            assert(transform * p == point(-2, 3, 4));
+        }
+
+        { // Test 3: Rotation
+            point p(0, 1, 0);
+            mat4x4 half_quarter = rotation_x(M_PI/4);
+            mat4x4 full_quarter = rotation_x(M_PI/2);
+            assert(half_quarter * p == point(0, sqrt(2)/2, sqrt(2)/2));
+            assert(full_quarter * p == point(0, 0, 1));
+            mat4x4 inv = inverse(half_quarter);
+            assert(inv * p == point(0, sqrt(2)/2, -sqrt(2)/2));
+
+            p = point(0, 0, 1);
+            half_quarter = rotation_y(M_PI/4);
+            full_quarter = rotation_y(M_PI/2);
+            assert(half_quarter * p == point(sqrt(2)/2, 0, sqrt(2)/2));
+            assert(full_quarter * p == point(1, 0, 0));
+
+            p = point(0, 1, 0);
+            half_quarter = rotation_z(M_PI/4);
+            full_quarter = rotation_z(M_PI/2);
+            assert(half_quarter * p == point(-sqrt(2)/2, sqrt(2)/2, 0));
+            assert(full_quarter * p == point(-1, 0, 0));
+        }
+
+        { // Test 4: Shearing
+            mat4x4 transform = shearing(1, 0, 0, 0, 0, 0);
+            point p(2, 3, 4);
+            assert(transform * p == point(5, 3, 4));
+
+            transform = shearing(0, 1, 0, 0, 0, 0);
+            assert(transform * p == point(6, 3, 4));
+            transform = shearing(0, 0, 1, 0, 0, 0);
+            assert(transform * p == point(2, 5, 4));
+            transform = shearing(0, 0, 0, 1, 0, 0);
+            assert(transform * p == point(2, 7, 4));
+            transform = shearing(0, 0, 0, 0, 1, 0);
+            assert(transform * p == point(2, 3, 6));
+            transform = shearing(0, 0, 0, 0, 0, 1);
+            assert(transform * p == point(2, 3, 7));
+        }
+
+        { // Test 5: Chaining Transformations
+            point p(1, 0, 1);
+            mat4x4 A = rotation_x(M_PI/2);
+            mat4x4 B = scaling(5, 5, 5);
+            mat4x4 C = translation(10, 5, 7);
+
+            // TODO: Operator overload on assignment for point = tup4
+            point p2 = A * p;
+            assert(p2 == point(1, -1, 0));
+
+            point p3 = B * p2;
+            assert(p3 == point(5,  -5, 0));
+
+            point p4 = C * p3;
+            assert(p4 == point(15, 0, 7));
+
+            mat4x4 T = C * B * A;
+            assert(T * p == p4);
+        }
+    }
     std::cout << "All tests passed." << std::endl;
     #endif  
 
