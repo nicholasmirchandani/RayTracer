@@ -1,8 +1,8 @@
 #ifndef POINT_H
 #define POINT_H
-#include "tuple.h"
+#include "tup4.h"
 
-class point : public tuple {
+class point : public tup4 {
     public:
     point(float, float, float);
 };

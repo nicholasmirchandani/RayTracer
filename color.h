@@ -1,12 +1,11 @@
 #ifndef COLOR_H
 #define COLOR_H
-#include "tuple.h"
+#include "tup3.h"
 
-class color : public tuple {
+class color : public tup3 {
     public:
     color();
     color(float, float, float);
-    color(float, float, float, float);
 
     friend color operator+(color, color);
     friend color operator-(color, color);

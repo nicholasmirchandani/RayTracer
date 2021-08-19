@@ -1,14 +1,10 @@
 #include "color.h"
 
-color::color() : tuple(0, 0, 0, 1) {
+color::color() : tup3(0, 0, 0) {
     // Initialization list is all we need
 }
 
-color::color(float r, float g, float b) : tuple(r, g, b, 1.0f) {
-    // Initialization list is all we need
-}
-
-color::color(float r, float g, float b, float a) : tuple(r, g, b, a) {
+color::color(float r, float g, float b) : tup3(r, g, b) {
     // Initialization list is all we need
 }
 
