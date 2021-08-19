@@ -557,4 +557,23 @@ int main() {
     std::cout << "All tests passed." << std::endl;
     #endif  
 
+    // Clock!
+    canvas c(400, 400);
+    point curPos(0, -1, 0); // 12 o'clock is -1 because y is flipped because top left is 0, 0
+    mat4x4 transform = rotation_z(M_PI/6);
+    for(int i = 1; i < 13; ++i) {
+        // TODO: Write to canvas the pixel at x,y.  -1 -> 1 = 0 - 400; let's go for a 400 x 400, putting the pixels at 360 pixels away with a 20 pixel margin
+        curPos = transform * curPos;
+        int x = (int)((curPos.x + 1) * 180 + 0.5f) + 20;
+        int y = (int)((curPos.y + 1) * 180 + 0.5f) + 20;
+        std::cout << "Number " << i << " is at " << curPos << " at pixel " << x << " " << y << std::endl;
+        if(i == 12) {
+            c[x][y] = color(1, 0, 0);
+        } else {
+            c[x][y] = color(1, 1, 1);
+        }
+    }
+
+    std::ofstream os("Clock.ppm");
+    c.writePPM(os);
 }
