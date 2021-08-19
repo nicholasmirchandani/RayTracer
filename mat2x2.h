@@ -3,6 +3,11 @@
 #include <iostream>
 #include "tup2.h"
 
+#define MAT2x2_INIT(mat, A, B, \
+                         C, D) \
+                         mat[0][0] = A; mat[0][1] = B; \
+                         mat[1][0] = C; mat[1][1] = D;
+
 class mat2x2 {
     public:
     float values[2][2];
