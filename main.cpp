@@ -711,6 +711,7 @@ int main() {
 
     { // Cast rays at  a sphere and draw the picture to a canvas
         sphere s;
+        s.transform = rotation_z(M_PI / 4) * scaling(1, 0.5, 1) * shearing(1, 0, 0, 0, 0, 0) * scaling(.65, 1, 1);
         point ray_origin(0, 0, -5);
         float wall_size = 5; // Set based on wall_z
         float wall_z = 10;
