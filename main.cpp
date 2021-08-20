@@ -1,16 +1,11 @@
 #define RUN_TESTS
 
-#include <iostream>
 #include <fstream>
 #include <cassert>
-#include "tup4.h"
 #include "point.h"
 #include "vector.h"
-#include "color.h"
 #include "canvas.h"
-#include "mat2x2.h"
-#include "mat3x3.h"
-#include "mat4x4.h"
+#include "ray.h"
 
 int main() {
 
@@ -554,26 +549,198 @@ int main() {
             assert(T * p == p4);
         }
     }
-    std::cout << "All tests passed." << std::endl;
-    #endif  
 
-    // Clock!
-    canvas c(400, 400);
-    point curPos(0, -1, 0); // 12 o'clock is -1 because y is flipped because top left is 0, 0
-    mat4x4 transform = rotation_z(M_PI/6);
-    for(int i = 1; i < 13; ++i) {
-        // TODO: Write to canvas the pixel at x,y.  -1 -> 1 = 0 - 400; let's go for a 400 x 400, putting the pixels at 360 pixels away with a 20 pixel margin
-        curPos = transform * curPos;
-        int x = (int)((curPos.x + 1) * 180 + 0.5f) + 20;
-        int y = (int)((curPos.y + 1) * 180 + 0.5f) + 20;
-        std::cout << "Number " << i << " is at " << curPos << " at pixel " << x << " " << y << std::endl;
-        if(i == 12) {
-            c[x][y] = color(1, 0, 0);
-        } else {
-            c[x][y] = color(1, 1, 1);
+    { // Chapter 5: Ray-Sphere Intersections
+        { // Test 1: Rays! 
+            point origin(1, 2, 3);
+            vector direction(4, 5, 6);
+            ray r(origin, direction);
+            assert(r.origin == origin && r.direction == direction);
+
+            r = ray(point(2,3,4), vector(1,0,0));
+            assert(position(r, 0) == point(2,3,4));
+            assert(position(r, 1) == point(3,3,4));
+            assert(position(r, -1) == point(1,3,4));
+            assert(position(r, 2.5) == point(4.5, 3, 4));
+        }
+
+        { // Test 2: Intersect unit sphere
+            ray r(point(0, 0, -5), vector(0, 0, 1));
+            sphere s;
+            intersection xs[10]; // Buffer for nonalloc intersect
+            int count = intersect(r, s, xs, 10);
+            assert(count == 2);
+            assert(abs(xs[0].t - 4.0f) < EPSILON);
+            assert(abs(xs[1].t - 6.0f) < EPSILON);
+
+            r = ray(point(0, 1, -5), vector(0, 0, 1));
+            count = intersect(r, s, xs, 10);
+            assert(count == 2);
+            assert(abs(xs[0].t - 5.0f) < EPSILON);
+            assert(abs(xs[1].t - 5.0f) < EPSILON);
+
+            r = ray(point(0, 2, -5), vector(0, 0, 1));
+            count = intersect(r, s, xs, 10);
+            assert(count == 0);
+
+            r = ray(point(0, 0, 0), vector(0, 0, 1));
+            count = intersect(r, s, xs, 100);
+            assert(count == 2);
+            assert(abs(xs[0].t + 1.0f) < EPSILON);
+            assert(abs(xs[1].t - 1.0f) < EPSILON);
+
+            r = ray(point(0, 0, 5), vector(0, 0, 1));
+            count = intersect(r, s, xs, 10);
+            assert(count == 2);
+            assert(abs(xs[0].t + 6.0f) < EPSILON);
+            assert(abs(xs[1].t + 4.0f) < EPSILON);
+        }
+
+        { // Test 3: Intersections
+            sphere s;
+            intersection i(3.5f, s);
+            assert(abs(i.t - 3.5f) < EPSILON);
+            assert(i.object == s);
+
+            intersection xs[10];
+            intersection i1(1, s);
+            intersection i2(2, s);
+            int count = intersections(&i1, 1, &i2, 1, xs, 10);
+            assert(count == 2);
+            assert(abs(xs[0].t - 1) < EPSILON);
+            assert(abs(xs[1].t - 2) < EPSILON);
+
+            ray r(point(0, 0, -5), vector(0, 0, 1));
+            count = intersect(r, s, xs, 10);
+            assert(count == 2);
+            assert(xs[0].object == s);
+            assert(xs[1].object == s);
+        }
+
+        { // Test 4: Hits
+            sphere s;
+            intersection i1(1, s);
+            intersection i2(2, s);
+            intersection xs[10];
+            int count = intersections(&i1, 1, &i2, 1, xs, 10);
+            intersection i3;
+            bool isHit = hit(xs, count, i3);
+            assert(isHit && i3 == i1);
+
+            i1 = intersection(-1, s);
+            i2 = intersection(1, s);
+            count = intersections(&i1, 1, &i2, 1, xs, 10);
+            isHit = hit(xs, count, i3);
+            assert(isHit && i3 == i2);
+
+            i1 = intersection(-2, s);
+            i2 = intersection(-1, s);
+            count = intersections(&i1, 1, &i2, 1, xs, 10);
+            isHit = hit(xs, count, i3);
+            assert(!isHit);
+
+            i1 = intersection(5, s);
+            i2 = intersection(7, s);
+            i3 = intersection(-3, s);
+            intersection i4 = intersection(2,s);
+            intersection i5;
+            count = intersections(&i1, 1, &i2, 1, xs, 10);
+            count = intersections(xs, count, &i3, 1, xs, 10);
+            count = intersections(xs, count, &i4, 1, xs, 10);
+            assert(count == 4);
+            isHit = hit(xs, count, i5);
+            assert(isHit && i5 == i4);
+        }
+
+        { // Test 5: Ray transformations on sphere
+            ray r(point(1,2,3), vector(0, 1, 0));
+            mat4x4 m = translation(3,4,5);
+            ray r2 = transform(r, m);
+            assert(r2.origin == point(4, 6, 8));
+            assert(r2.direction == vector(0, 1, 0));
+
+            m = scaling(2, 3, 4);
+            r2 = transform(r, m);
+            assert(r2.origin == point(2, 6, 12));
+            assert(r2.direction == vector(0, 3, 0));
+
+            sphere s;
+            assert((s.transform) == inverse(s.transform)); // Identity is the only matrix which is its inverse; I don't have to type it all out again :)
+
+            mat4x4 t = translation(2, 3, 4);
+            s.transform = t; // TODO: The book used set_transform as a function call instead of this... why?
+            assert(s.transform == t);
+
+            r = ray(point(0, 0, -5), vector(0, 0, 1));
+            s.transform = scaling(2, 2, 2);
+            intersection xs[10];
+            int count = intersect(r, s, xs, 10);
+            assert(count == 2);
+            assert(abs(xs[0].t - 3) < EPSILON);
+            assert(abs(xs[1].t - 7) < EPSILON);
+
+            s.transform = translation(5, 0, 0);
+            count = intersect(r, s, xs, 10);
+            assert(count == 0);
         }
     }
+    std::cout << "All tests passed." << std::endl;
+    #endif
 
-    std::ofstream os("Clock.ppm");
-    c.writePPM(os);
+    /* { // Clock!
+        canvas c(400, 400);
+        point curPos(0, -1, 0); // 12 o'clock is -1 because y is flipped because top left is 0, 0
+        mat4x4 transform = rotation_z(M_PI/6);
+        for(int i = 1; i < 13; ++i) {
+            // TODO: Write to canvas the pixel at x,y.  -1 -> 1 = 0 - 400; let's go for a 400 x 400, putting the pixels at 360 pixels away with a 20 pixel margin
+            curPos = transform * curPos;
+            int x = (int)((curPos.x + 1) * 180 + 0.5f) + 20;
+            int y = (int)((curPos.y + 1) * 180 + 0.5f) + 20;
+            std::cout << "Number " << i << " is at " << curPos << " at pixel " << x << " " << y << std::endl;
+            if(i == 12) {
+                c[x][y] = color(1, 0, 0);
+            } else {
+                c[x][y] = color(1, 1, 1);
+            }
+        }
+
+        std::ofstream os("Clock.ppm");
+        c.writePPM(os);
+        os.close();
+    } */
+
+    { // Cast rays at  a sphere and draw the picture to a canvas
+        sphere s;
+        point ray_origin(0, 0, -5);
+        float wall_size = 5; // Set based on wall_z
+        float wall_z = 10;
+        int canvas_pixels = 750;
+        canvas c(canvas_pixels, canvas_pixels); // Center at 250, 250
+        float pixel_size = wall_size / canvas_pixels;
+
+        // Declaring variables outside of the loop for speed
+        intersection xs[10];
+        intersection _;
+        int count;
+        ray r;
+        color red(1, 0, 0);
+        color black(0, 0, 0);
+
+        float half = - wall_size / 2;
+        for(int i = 0; i < canvas_pixels; ++i) {
+            for(int j = 0; j < canvas_pixels; ++j) {
+                // Render the pixels at [250 + i][250 - i] with the following rays
+                r = ray(ray_origin, normalize(point(i * pixel_size + half, j * pixel_size + half, wall_size) - ray_origin));
+                count = intersect(r, s, xs, wall_z);
+                if(hit(xs, count, _)) {
+                    c[i][j] = red;
+                } else {
+                    c[i][j] = black;
+                }
+            }
+        }
+        std::ofstream os("Circle.ppm");
+        c.writePPM(os);
+        os.close();
+    }
 }
