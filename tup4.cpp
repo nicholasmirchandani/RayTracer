@@ -86,3 +86,7 @@ tup4 cross(tup4 a1, tup4 a2) {
                   a1.z * a2.x - a1.x * a2.z,
                   a1.x * a2.y - a1.y * a2.x, 0.0f);
 }
+
+tup4 reflect(tup4 in, tup4 normal) {
+    return in - normal * 2 * dot(in, normal);
+}

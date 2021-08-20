@@ -28,9 +28,10 @@ class tup4 {
     float operator[](int i);
 };
 
-// NOTE: Although these are only meant to be used with vectors, they're implemented to be used with generic tup4s for speed
+// NOTE: Although these are only meant to be used with vectors, they're implemented to be used with generic tup4s for convenience (subtracting points doesn't change the class to vector)
 float magnitude(tup4 t); // Just declaration so main knows it exists; implementation is in tup4.cpp
 tup4 normalize(tup4 t);
 float dot(tup4 a1, tup4 a2);
 tup4 cross(tup4 a1, tup4 a2);
+tup4 reflect(tup4 in, tup4 normal);
 #endif

@@ -4,6 +4,7 @@
 
 class vector : public tup4 {
     public:
+    vector();
     vector(float, float, float);
     vector(const tup4&);
 };

@@ -1,11 +1,11 @@
-#define RUN_TESTS
+// #define RUN_TESTS
 
 #include <fstream>
 #include <cassert>
-#include "point.h"
-#include "vector.h"
 #include "canvas.h"
 #include "ray.h"
+#include "point_light.h"
+#include "material.h"
 
 int main() {
 
@@ -684,6 +684,98 @@ int main() {
             assert(count == 0);
         }
     }
+
+    { // Chapter 6: Light and Shading
+        { // Test 1: Normals on a sphere
+            sphere s;
+            vector n = normal_at(s, point(1, 0, 0));
+            assert(n == vector(1, 0, 0));
+            n = normal_at(s, point(0, 1, 0));
+            assert(n == vector(0, 1, 0));
+            n = normal_at(s, point(0, 0, 1));
+            assert(n == vector(0, 0, 1));
+            n = normal_at(s, point(sqrt(3)/3, sqrt(3)/3, sqrt(3)/3));
+            assert(n == vector(sqrt(3)/3, sqrt(3)/3, sqrt(3)/3));
+            assert(n == normalize(n));
+
+            s.transform = translation(0, 1, 0);
+            n = normal_at(s, point(0, 1.70711, -0.70711));
+            assert(n == vector(0, 0.70711, -0.70711));
+
+            s.transform = scaling(1, 0.5, 1) * rotation_z(M_PI/5);
+            n = normal_at(s, point(0, sqrt(2)/2, -sqrt(2)/2));
+            assert(n == vector(0, 0.97014, -0.24254));
+        }
+
+        { // Test 2: Reflection vector
+            vector v = vector(1, -1, 0);
+            vector n = vector(0, 1, 0);
+            vector r = reflect(v, n);
+            assert(r == vector(1, 1, 0));
+
+            v = vector(0, -1, 0);
+            n = vector(sqrt(2)/2, sqrt(2)/2, 0);
+            r = reflect(v, n);
+            assert(r == vector(1, 0, 0));
+        }
+
+        { // Test 3: Lights and Materials
+            color intensity(1, 1, 1);
+            point position(0, 0, 0);
+            point_light light = point_light(position, intensity);
+            assert(light.position == position && light.intensity == intensity);
+
+            material m;
+            assert(m.col == color(1, 1, 1));
+            assert(abs(m.ambient - 0.1f) < EPSILON);
+            assert(abs(m.diffuse - 0.9f) < EPSILON);
+            assert(abs(m.specular - 0.9f) < EPSILON);
+            assert(abs(m.shininess - 200.0f) < EPSILON);
+
+            sphere s;
+            assert(s.mat == material());
+
+            m = s.mat;
+            m.ambient = 1;
+            s.mat = m;
+            assert(s.mat == m);
+        }
+
+        { // Test 4: Lighting() Function
+            material m;
+            point position(0, 0, 0);
+
+            vector eyev(0, 0, -1);
+            vector normalv(0, 0, -1);
+            point_light light = point_light(point(0, 0, -10), color(1, 1, 1));
+            color result = lighting(m, light, position, eyev, normalv);
+            assert(result == color(1.9, 1.9, 1.9));
+
+            eyev = vector(0, sqrt(2)/2, -sqrt(2)/2);
+            normalv = vector(0, 0, -1);
+            light = point_light(point(0, 0, -10), color(1, 1, 1));
+            result = lighting(m, light, position, eyev, normalv);
+            assert(result == color(1.0, 1.0, 1.0));
+
+            eyev = vector(0, 0, -1);
+            normalv = vector(0, 0, -1);
+            light = point_light(point(0, 10, -10), color(1, 1, 1));
+            result = lighting(m, light, position, eyev, normalv);
+            assert(result == color(0.7364, 0.7364, 0.7364));
+
+            eyev = vector(0, -sqrt(2)/2, -sqrt(2)/2);
+            normalv = vector(0, 0, -1);
+            light = point_light(point(0, 10, -10), color(1, 1, 1));
+            result = lighting(m, light, position, eyev, normalv);
+            assert(result == color(1.6364, 1.6364, 1.6364));
+
+            eyev = vector(0, 0, -1);
+            normalv = vector(0, 0, -1);
+            light = point_light(point(0, 0, 10), color(1, 1, 1));
+            result = lighting(m, light, position, eyev, normalv);
+            assert(result == color(0.1, 0.1, 0.1));
+        }
+    }
     std::cout << "All tests passed." << std::endl;
     #endif
 
@@ -710,8 +802,13 @@ int main() {
     } */
 
     { // Cast rays at  a sphere and draw the picture to a canvas
+        point light_pos(-10, 10, -10);
+        color light_col(1, 1, 1);
+        point_light light = point_light(light_pos, light_col);
+
         sphere s;
-        s.transform = rotation_z(M_PI / 4) * scaling(1, 0.5, 1) * shearing(1, 0, 0, 0, 0, 0) * scaling(.65, 1, 1);
+        s.mat.col = color(1, 0.2, 1);
+        // s.transform = rotation_z(M_PI / 4) * scaling(1, 0.5, 1) * shearing(1, 0, 0, 0, 0, 0) * scaling(.65, 1, 1);
         point ray_origin(0, 0, -5);
         float wall_size = 5; // Set based on wall_z
         float wall_z = 10;
@@ -721,9 +818,12 @@ int main() {
 
         // Declaring variables outside of the loop for speed
         intersection xs[10];
-        intersection _;
+        intersection hitOut;
         int count;
         ray r;
+        point p;
+        vector n;
+        vector eye;
         color red(1, 0, 0);
         color black(0, 0, 0);
 
@@ -733,14 +833,17 @@ int main() {
                 // Render the pixels at [250 + i][250 - i] with the following rays
                 r = ray(ray_origin, normalize(point(i * pixel_size + half, j * pixel_size + half, wall_size) - ray_origin));
                 count = intersect(r, s, xs, wall_z);
-                if(hit(xs, count, _)) {
-                    c[i][j] = red;
+                if(hit(xs, count, hitOut)) {
+                    p = position(r, hitOut.t);
+                    n = normal_at(hitOut.object, p);
+                    eye = -r.direction;
+                    c[i][canvas_pixels - 1 - j] = lighting(hitOut.object.mat, light, p, eye, n); // canvas_pixels - 1 - j because y is reversed :)
                 } else {
-                    c[i][j] = black;
+                    c[i][canvas_pixels - 1 - j] = black;
                 }
             }
         }
-        std::ofstream os("Circle.ppm");
+        std::ofstream os("Sphere.ppm");
         c.writePPM(os);
         os.close();
     }

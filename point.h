@@ -4,6 +4,7 @@
 
 class point : public tup4 {
     public:
+    point();
     point(float, float, float);
     point(const tup4&);
 };
